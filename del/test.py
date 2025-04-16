@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load the image
-image = cv2.imread("Corners.png")
+image = cv2.imread("../Corners.png")
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
 
 # Convert to float32 as required by the Harris function
