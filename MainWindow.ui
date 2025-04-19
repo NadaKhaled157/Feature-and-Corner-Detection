@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1517</width>
-    <height>837</height>
+    <width>1680</width>
+    <height>857</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -710,6 +710,44 @@ border-right:None;
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_37">
+              <item>
+               <widget class="QPushButton" name="pushButton_Upload_Img1">
+                <property name="styleSheet">
+                 <string notr="true">Font-size:15px;
+font-weight:bold;
+background: #ccd8e8;
+color:white;
+border:3px solid black;
+padding:2px;
+border-radius:7px;
+ border: 3px solid#5583ad;;</string>
+                </property>
+                <property name="text">
+                 <string>Upload Img 1</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_Upload_Img2">
+                <property name="styleSheet">
+                 <string notr="true">Font-size:15px;
+font-weight:bold;
+background: #ccd8e8;
+color:white;
+border:3px solid black;
+padding:2px;
+border-radius:7px;
+ border: 3px solid#5583ad;;</string>
+                </property>
+                <property name="text">
+                 <string>Upload Img 2</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_36">
               <item>
                <spacer name="horizontalSpacer_13">
@@ -763,19 +801,6 @@ border:None;</string>
                </spacer>
               </item>
               <item>
-               <spacer name="horizontalSpacer_43">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
                <widget class="QRadioButton" name="RadioButton_NND_2">
                 <property name="font">
                  <font>
@@ -793,7 +818,7 @@ color:#5583ad;
 border:None;</string>
                 </property>
                 <property name="text">
-                 <string>NND</string>
+                 <string>NCC</string>
                 </property>
                 <property name="checked">
                  <bool>false</bool>
@@ -813,18 +838,53 @@ border:None;</string>
                 </property>
                </spacer>
               </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_38">
               <item>
-               <spacer name="horizontalSpacer_45">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
+               <widget class="QLabel" name="label_param_17">
+                <property name="font">
+                 <font>
+                  <pointsize>-1</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
+                <property name="styleSheet">
+                 <string notr="true">Font-size:17px;
+font-weight:bold;
+background:#fdfdfd;
+color:#5583ad;
+
+border:None;</string>
                 </property>
-               </spacer>
+                <property name="text">
+                 <string>          Computation time :</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="Label_Comp_Match">
+                <property name="font">
+                 <font>
+                  <pointsize>-1</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">Font-size:17px;
+font-weight:bold;
+background:#fdfdfd;
+color:#5583ad;
+
+border:None;</string>
+                </property>
+                <property name="text">
+                 <string>25    </string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -923,7 +983,7 @@ border:None;</string>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="Widget_Output_1" native="true">
+          <widget class="QLabel" name="Widget_Output_1">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -961,7 +1021,7 @@ color:#5583ad;
 border:None;</string>
            </property>
            <property name="text">
-            <string>                    </string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -1122,7 +1182,7 @@ border:None;</string>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="Widget_Output_3" native="true">
+          <widget class="QLabel" name="Widget_Output_3">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -1264,7 +1324,7 @@ border:None;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1517</width>
+     <width>1680</width>
      <height>26</height>
     </rect>
    </property>

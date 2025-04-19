@@ -8,6 +8,15 @@ import sys
 import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image
+from PyQt5.QtWidgets import QLabel, QRadioButton
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtWidgets import QMainWindow, QApplication, QButtonGroup, QPushButton, QSlider, QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QLabel
+from PyQt5.QtGui import QPixmap, QImage
+import time
+
+
+from PyQt5.QtWidgets import QButtonGroup, QRadioButton
 
 
 def generate_heatmap_pixmap(R, threshold_ratio=0.01):
@@ -169,6 +178,31 @@ class MainWindow(QMainWindow):
         self.done_button = self.findChild(QPushButton, "pushButton_done_2")
         self.done_button.clicked.connect(self.apply_corner_detection)
 
+
+
+#///////////////////////////////////////////////////////////////////////////////////////////
+
+        self.pushButton_Upload_Img1.clicked.connect(lambda : self.Upload_Imgs(1))
+        self.pushButton_Upload_Img2.clicked.connect(lambda : self.Upload_Imgs(2))
+        self.RadioButton_SSD_2.clicked.connect(self.on_radio_selected)
+        self.RadioButton_NND_2.clicked.connect(self.on_radio_selected)
+
+
+        
+       
+        self.button_group = QButtonGroup(self)
+
+       
+        self.button_group.addButton(self.RadioButton_Harris_2)
+        self.button_group.addButton(self.RadioButton_SIFT_2)
+        self.button_group.addButton(self.RadioButton_Match_3)
+
+       
+        self.button_group.buttonClicked.connect(self.on_radio_selected)
+        self.Label_Comp_Match.setText("     seconds")
+
+
+
     def k_value_changed(self):
         self.k_label.setText(str(f"K: {self.k_parameter.value()/100}"))
 
@@ -325,6 +359,201 @@ class MainWindow(QMainWindow):
         smoothed_IyIy = apply_smoothing_window(IyIy, self.height, self.width, kernel)
         smoothed_IxIy = apply_smoothing_window(IxIy, self.height, self.width, kernel)
         return smoothed_IxIx, smoothed_IyIy, smoothed_IxIy
+
+
+#//////////////////////////////////////////////MATCHING CODE////////////////////////////////////////////////////////////////////
+
+    def Upload_Imgs(self, num_of_img):
+        file_dialog = QFileDialog()
+        image_path, _ = file_dialog.getOpenFileName(None, "Select Image", "", "Images (*.png *.jpg *.jpeg *.bmp)")
+        if not image_path:
+            return
+
+        cv_image = cv2.imread(image_path)
+        if cv_image is None:
+            print(f"Failed to load image: {image_path}")
+            return
+
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+
+        # Initialize top and bottom images if they don't exist
+        if not hasattr(self, 'top_image'):
+            self.top_image = None
+        if not hasattr(self, 'bottom_image'):
+            self.bottom_image = None
+
+        # Handle image upload scenarios
+        if num_of_img == 1:  # Replace top image
+            self.top_image = cv_image
+        elif num_of_img == 2:  # Replace bottom image
+            self.bottom_image = cv_image
+
+        # After upload, ensure both images exist (create white image if needed)
+        if self.top_image is None and self.bottom_image is not None:
+            self.top_image = np.full((self.bottom_image.shape[0], self.bottom_image.shape[1], 3), 255, dtype=np.uint8)
+        elif self.bottom_image is None and self.top_image is not None:
+            self.bottom_image = np.full((self.top_image.shape[0], self.top_image.shape[1], 3), 255, dtype=np.uint8)
+        elif self.top_image is None and self.bottom_image is None:
+            return  # No images to display
+        else:
+            self.on_radio_selected()
+
+            
+
+        # Ensure the widths match by resizing images to the smallest width
+        target_width =self.original_image_label.width()
+        
+        # Calculate the target height for each image (equal height)
+        # Get height of the display area
+        display_height = self.original_image_label.height()
+        # Calculate half height, accounting for the separator
+        separator_height = 2  # Height of separator in pixels
+        half_height = (display_height - separator_height) // 2
+        
+        # Resize both images to have the same width and equal heights
+        resized_top = cv2.resize(self.top_image, (target_width, half_height))
+        resized_bottom = cv2.resize(self.bottom_image, (target_width, half_height))
+        
+        # Create a separator (gray line)
+        separator = np.full((separator_height, target_width, 3), 128, dtype=np.uint8)  # Gray color
+        
+        # Combine the top image, separator, and bottom image vertically
+        combined_image = np.vstack((resized_top, separator, resized_bottom))
+
+        # Convert the combined image to QImage for displaying
+        height, width, channel = combined_image.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(combined_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_img)
+
+        # Scale the pixmap to fit the label size while maintaining aspect ratio
+        scaled_pixmap = pixmap.scaled(
+            self.original_image_label.width(),
+            self.original_image_label.height(),
+            Qt.KeepAspectRatio
+        )
+        
+
+        # Set the pixmap to the label
+        self.original_image_label.setPixmap(scaled_pixmap)
+
+    def sum_of_squared_difference(self, img, template):
+        if img is None or template is None:
+            print("One or both images failed to load.")
+            return
+        # Start the timer
+        start_time = time.time()
+
+        # Convert to grayscale
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+        # Get template dimensions
+        h, w = template_gray.shape
+
+        # Apply SSD matching
+        result = cv2.matchTemplate(img_gray, template_gray, cv2.TM_SQDIFF)
+
+        # Find best match (minimum difference)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        top_left = min_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+
+ 
+        max_possible_ssd = template_gray.size * (255 ** 2)
+        similarity_percent = 100 * (1 - min_val / max_possible_ssd)
+        print(f"Similarity: {similarity_percent:.2f}%")
+
+        # Draw rectangle on a copy of the original image
+        output_image = img.copy()
+        cv2.rectangle(output_image, top_left, bottom_right, (255, 0, 255), 2)
+
+        # Convert to QImage and display
+        height, width, channel = output_image.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+
+        pixmap = QPixmap.fromImage(q_img)
+        scaled_pixmap = pixmap.scaled(
+            self.output_image_label.width(),
+            self.output_image_label.height(),
+            Qt.KeepAspectRatio
+        )
+        self.output_image_label.setPixmap(scaled_pixmap)
+
+            # End the timer and calculate the elapsed time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        # print(f"SSD Computation Time: {elapsed_time:.4f} seconds")
+        self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
+
+
+
+
+
+    def normalized_cross_correlation(self, img, template):
+        if img is None or template is None:
+            print("One or both images failed to load.")
+            return
+        # Start the timer
+        start_time = time.time()
+
+        # Convert to grayscale
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+        # Get template dimensions
+        h, w = template_gray.shape
+
+        # Apply NCC matching (using normalized cross-correlation)
+        result = cv2.matchTemplate(img_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+
+        # Find best match (maximum correlation)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        top_left = max_loc  # For NCC, max correlation is the best match
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+
+        # Similarity as percentage (NCC is in range [-1, 1], so map to 0-100%)
+        similarity_percent = 100 * max_val  # max_val is the highest correlation value
+        print(f"Similarity: {similarity_percent:.2f}%")
+
+        # Draw rectangle on a copy of the original image
+        output_image = img.copy()
+        cv2.rectangle(output_image, top_left, bottom_right, (255, 0, 255), 2)
+
+        # Convert to QImage and display
+        height, width, channel = output_image.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+
+        pixmap = QPixmap.fromImage(q_img)
+        scaled_pixmap = pixmap.scaled(
+            self.output_image_label.width(),
+            self.output_image_label.height(),
+            Qt.KeepAspectRatio
+        )
+        self.output_image_label.setPixmap(scaled_pixmap)
+
+            # End the timer and calculate the elapsed time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
+
+
+
+    def on_radio_selected(self):
+        if  self.RadioButton_Harris_2.isChecked():
+            pass
+        elif  self.RadioButton_SIFT_2.isChecked():
+            pass
+        elif self.RadioButton_Match_3.isChecked():
+            if self.RadioButton_SSD_2.isChecked():
+                self.sum_of_squared_difference(self.top_image, self.bottom_image)
+            elif self.RadioButton_NND_2.isChecked():
+                self.normalized_cross_correlation(self.top_image, self.bottom_image)
+
+
+
 
 
 if __name__ == "__main__":
