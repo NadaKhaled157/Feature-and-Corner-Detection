@@ -441,6 +441,7 @@ class MainWindow(QMainWindow):
         if img is None or template is None:
             print("One or both images failed to load.")
             return
+
         # Start the timer
         start_time = time.time()
 
@@ -450,21 +451,32 @@ class MainWindow(QMainWindow):
 
         # Get template dimensions
         h, w = template_gray.shape
+        img_h, img_w = img_gray.shape
 
-        # Apply SSD matching
-        result = cv2.matchTemplate(img_gray, template_gray, cv2.TM_SQDIFF)
+        min_ssd = float('inf')
+        best_loc = (0, 0)
 
-        # Find best match (minimum difference)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-        top_left = min_loc
-        bottom_right = (top_left[0] + w, top_left[1] + h)
+        # Manually compute SSD over all possible locations in the image
+        for y in range(img_h - h + 1):
+            for x in range(img_w - w + 1):
+                # Extract the region of the image
+                region = img_gray[y:y+h, x:x+w]
+                
+                # Compute SSD for this region and the template
+                ssd = np.sum((region - template_gray) ** 2)
 
- 
-        max_possible_ssd = template_gray.size * (255 ** 2)
-        similarity_percent = 100 * (1 - min_val / max_possible_ssd)
-        print(f"Similarity: {similarity_percent:.2f}%")
+                # Track minimum SSD and best matching location
+                if ssd < min_ssd:
+                    min_ssd = ssd
+                    best_loc = (x, y)
+
+        # Calculate similarity percentage from SSD
+        max_possible_ssd = (255**2) * (h * w)
+        similarity_percent = 100 * (1 - min_ssd / max_possible_ssd)
 
         # Draw rectangle on a copy of the original image
+        top_left = best_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
         output_image = img.copy()
         cv2.rectangle(output_image, top_left, bottom_right, (255, 0, 255), 2)
 
@@ -481,10 +493,10 @@ class MainWindow(QMainWindow):
         )
         self.output_image_label.setPixmap(scaled_pixmap)
 
-            # End the timer and calculate the elapsed time
+        # End the timer and calculate the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
-        # print(f"SSD Computation Time: {elapsed_time:.4f} seconds")
+        print(f"SSD Similarity: {similarity_percent:.2f}%\n")
         self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
 
 
@@ -495,6 +507,7 @@ class MainWindow(QMainWindow):
         if img is None or template is None:
             print("One or both images failed to load.")
             return
+
         # Start the timer
         start_time = time.time()
 
@@ -504,20 +517,39 @@ class MainWindow(QMainWindow):
 
         # Get template dimensions
         h, w = template_gray.shape
+        img_h, img_w = img_gray.shape
 
-        # Apply NCC matching (using normalized cross-correlation)
-        result = cv2.matchTemplate(img_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        max_ncc = -1.0
+        best_loc = (0, 0)
 
-        # Find best match (maximum correlation)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-        top_left = max_loc  # For NCC, max correlation is the best match
-        bottom_right = (top_left[0] + w, top_left[1] + h)
+        # Manually compute NCC over all possible locations in the image
+        for y in range(img_h - h + 1):
+            for x in range(img_w - w + 1):
+                # Extract the region of the image
+                region = img_gray[y:y+h, x:x+w]
 
-        # Similarity as percentage (NCC is in range [-1, 1], so map to 0-100%)
-        similarity_percent = 100 * max_val  # max_val is the highest correlation value
-        print(f"Similarity: {similarity_percent:.2f}%")
+                # Calculate the mean of the region and the template
+                mean_img = np.mean(region)
+                mean_template = np.mean(template_gray)
+
+                # Compute the numerator and denominator of the NCC formula
+                numerator = np.sum((region - mean_img) * (template_gray - mean_template))
+                denominator = np.sqrt(np.sum((region - mean_img) ** 2) * np.sum((template_gray - mean_template) ** 2))
+
+                # Compute NCC for this region
+                ncc = numerator / denominator if denominator != 0 else 0
+
+                # Track maximum NCC and best matching location
+                if ncc > max_ncc:
+                    max_ncc = ncc
+                    best_loc = (x, y)
+
+        # Calculate similarity percentage from NCC
+        similarity_percent = 100 * max_ncc
 
         # Draw rectangle on a copy of the original image
+        top_left = best_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
         output_image = img.copy()
         cv2.rectangle(output_image, top_left, bottom_right, (255, 0, 255), 2)
 
@@ -534,9 +566,10 @@ class MainWindow(QMainWindow):
         )
         self.output_image_label.setPixmap(scaled_pixmap)
 
-            # End the timer and calculate the elapsed time
+        # End the timer and calculate the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
+        print(f"NCC Similarity: {similarity_percent:.2f}%\n")
         self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
 
 
