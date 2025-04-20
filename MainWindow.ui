@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1680</width>
-    <height>857</height>
+    <width>1490</width>
+    <height>861</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,7 +56,7 @@ background:#fdfdfd;
              <widget class="QRadioButton" name="RadioButton_Harris_2">
               <property name="font">
                <font>
-                <pointsize>1</pointsize>
+                <pointsize>-1</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -105,7 +105,7 @@ border:None;</string>
                <widget class="QLabel" name="label_param_6">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -192,7 +192,7 @@ QSlider::add-page:horizontal {
                <widget class="QLabel" name="label_param_8">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -279,7 +279,7 @@ QSlider::add-page:horizontal {
                <widget class="QLabel" name="label_param_10">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -381,7 +381,7 @@ border:None;</string>
                <widget class="QLabel" name="label_param_11">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -468,7 +468,7 @@ QSlider::add-page:horizontal {
                <widget class="QLabel" name="label_param_12">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -644,7 +644,7 @@ border-radius:7px;
              <widget class="QRadioButton" name="RadioButton_SIFT_2">
               <property name="font">
                <font>
-
+                <pointsize>-1</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -685,7 +685,7 @@ border-right:None;
              <widget class="QRadioButton" name="RadioButton_Match_3">
               <property name="font">
                <font>
-
+                <pointsize>-1</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -708,6 +708,19 @@ border-right:None;
                <bool>false</bool>
               </property>
              </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_37">
@@ -748,6 +761,19 @@ border-radius:7px;
              </layout>
             </item>
             <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_36">
               <item>
                <spacer name="horizontalSpacer_13">
@@ -766,7 +792,7 @@ border-radius:7px;
                <widget class="QRadioButton" name="RadioButton_SSD_2">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -804,7 +830,7 @@ border:None;</string>
                <widget class="QRadioButton" name="RadioButton_NND_2">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -841,12 +867,125 @@ border:None;</string>
              </layout>
             </item>
             <item>
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_39">
+              <item>
+               <widget class="QLabel" name="label_param_19">
+                <property name="font">
+                 <font>
+                  <pointsize>-1</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">Font-size:17px;
+font-weight:bold;
+background:#fdfdfd;
+color:#5583ad;
+
+border:None;</string>
+                </property>
+                <property name="text">
+                 <string>          Num_Features   : 10        </string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSlider" name="Slider_Num_Features">
+                <property name="styleSheet">
+                 <string notr="true">
+QSlider {
+    background: transparent; /* Make the entire slider background transparent */
+    border:None;
+}
+
+
+QSlider::groove:horizontal {
+    height: 8px;
+    background: :rgba(158,177,175,255); /* Lighter shade of the dark color */
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background:  white; /* Mid-tone between the dark and lighter colors */
+    border: 2px solid #5583ad; /* Matches groove */
+    width: 20px;
+    height: 20px;
+    margin: -6px 0;
+    border-radius: 10px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #5583ad; /* Matches handle */
+    border-radius: 4px;
+}
+
+QSlider::add-page:horizontal {
+   
+    border:2px solid #5583ad;
+    border-radius: 4px;
+}
+
+</string>
+                </property>
+                <property name="minimum">
+                 <number>10</number>
+                </property>
+                <property name="maximum">
+                 <number>200</number>
+                </property>
+                <property name="singleStep">
+                 <number>5</number>
+                </property>
+                <property name="pageStep">
+                 <number>10</number>
+                </property>
+                <property name="value">
+                 <number>10</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="tickPosition">
+                 <enum>QSlider::TicksBelow</enum>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_38">
               <item>
                <widget class="QLabel" name="label_param_17">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -868,7 +1007,7 @@ border:None;</string>
                <widget class="QLabel" name="Label_Comp_Match">
                 <property name="font">
                  <font>
-  
+                  <pointsize>-1</pointsize>
                   <weight>75</weight>
                   <bold>true</bold>
                  </font>
@@ -922,7 +1061,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_33">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -944,7 +1083,7 @@ border:None;</string>
           <widget class="QLabel" name="Label_output_2">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="styleSheet">
@@ -964,7 +1103,7 @@ border:None;
           <widget class="QLabel" name="label_param_18">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1007,7 +1146,7 @@ border-radius:20px;</string>
           <widget class="QLabel" name="label_param_14">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1029,7 +1168,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_21">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1051,7 +1190,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_16">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1073,7 +1212,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_15">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1095,7 +1234,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_13">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1121,7 +1260,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_32">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1143,7 +1282,7 @@ border:None;</string>
           <widget class="QLabel" name="label_13">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
             </font>
            </property>
            <property name="styleSheet">
@@ -1163,7 +1302,7 @@ border:None;
           <widget class="QLabel" name="label_param_28">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1206,7 +1345,7 @@ border-radius:20px;</string>
           <widget class="QLabel" name="label_param_24">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1228,7 +1367,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_31">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1250,7 +1389,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_29">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1272,7 +1411,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_26">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1294,7 +1433,7 @@ border:None;</string>
           <widget class="QLabel" name="label_param_22">
            <property name="font">
             <font>
-             <pointsize>1</pointsize>
+             <pointsize>-1</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -1324,7 +1463,7 @@ border:None;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1680</width>
+     <width>1490</width>
      <height>26</height>
     </rect>
    </property>
