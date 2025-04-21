@@ -184,11 +184,17 @@ class MainWindow(QMainWindow):
 
 #///////////////////////////////////////////////////////////////////////////////////////////
 
+        self.image=None
+        self.start_time_cal_sift=0
+        self.elapsed_time_cal_sift=0
+        self.upload_first=False
         self.pushButton_Upload_Img1.clicked.connect(lambda : self.Upload_Imgs(1))
         self.pushButton_Upload_Img2.clicked.connect(lambda : self.Upload_Imgs(2))
         self.RadioButton_SSD_2.clicked.connect(self.on_radio_selected)
         self.RadioButton_NND_2.clicked.connect(self.on_radio_selected)
-        self.Slider_Num_Features.valueChanged.connect(self.on_radio_selected)
+        self.RadioButton_SIFT_2.clicked.connect(self.on_radio_selected)
+        self.Slide_SIFT_Ratio.sliderReleased.connect(self.on_radio_selected)
+
 
         
        
@@ -201,7 +207,18 @@ class MainWindow(QMainWindow):
 
        
         self.button_group.buttonClicked.connect(self.on_radio_selected)
+
+
+       
+        self.button_group = QButtonGroup(self)
+
+ 
+
         self.Label_Comp_Match.setText("     seconds")
+        self.label_param_20.setText ("       Computation time :      seconds")
+                # Create consistent colors using a fixed seed
+       
+
 
 
 
@@ -398,6 +415,8 @@ class MainWindow(QMainWindow):
         elif self.top_image is None and self.bottom_image is None:
             return  # No images to display
         else:
+            self.image, self.kp1,self.des1,self.template, self.kp2, self.des2 =self.get_keypoints_and_descriptors(self.top_image, self.bottom_image)
+            self.upload_first=True
             self.on_radio_selected()
 
             
@@ -439,13 +458,16 @@ class MainWindow(QMainWindow):
         # Set the pixmap to the label
         self.original_image_label.setPixmap(scaled_pixmap)
 
-    def extract_keypoints_octaves(self):
-        height, width = self.grayscale_org_image.shape
+
+
+
+    def extract_keypoints_octaves(self , image):
+        height, width = image.shape
         num_octaves = int(np.log2(min(width, height))) - 3  # Corrected np.lg(2) to np.log2
         k = math.sqrt(2)
         blurred_images = {}
         DOG_images = {}
-        grey_image = self.grayscale_org_image
+        grey_image = image.copy()  # Make a copy of the original image
         keypoints = []  # We'll store the keypoints here
 
         for octave in range(1, num_octaves + 1):
@@ -547,7 +569,7 @@ class MainWindow(QMainWindow):
         self.keypoints_with_orientation = self.assign_orientation(keypoints)
         self.descriptors = self.compute_descriptors(self.keypoints_with_orientation)
 
-        return self.keypoints_with_orientation, self.descriptors
+        return  self.keypoints_with_orientation ,self.descriptors
 
     def check_cornerness(self, image, y_coo, x_coo):
         edge_thresh = 10
@@ -798,6 +820,8 @@ class MainWindow(QMainWindow):
             descriptors.append((keypoint, descriptor))
 
         return descriptors
+    
+
 
     def match_descriptors(self, descriptors1, descriptors2, threshold=0.75):
         """
@@ -920,197 +944,270 @@ class MainWindow(QMainWindow):
 
 
 
+  #hereeeeeee   
     def get_keypoints_and_descriptors(self, img, template  ):
+        self.start_time_cal_sift = time.time()
         if img is None or template is None:
             print("One or both images failed to load.")
             return
-
                 # Convert to grayscale
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-
+ 
+        #hereeeeeee 
         sift = cv2.SIFT_create()
         kp1, des1 = sift.detectAndCompute(template_gray, None)  
         kp2, des2 = sift.detectAndCompute(img_gray, None)  
-        
-        return img, des1, kp2, des2
+        # Convert descriptors to float32
 
-    # def sum_of_squared_difference(self, img, template):
-    #     if img is None or template is None:
-    #         print("One or both images failed to load.")
-    #         return
-
-    #     # Start the timer
-    #     start_time = time.time()
-
-    #     # Convert to grayscale
-    #     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #     template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-
-    #     # Get template dimensions
-    #     h, w = template_gray.shape
-    #     img_h, img_w = img_gray.shape
-
-    #     min_ssd = float('inf')
-    #     best_loc = (0, 0)
-
-    #     # Manually compute SSD over all possible locations in the image
-    #     for y in range(img_h - h + 1):
-    #         for x in range(img_w - w + 1):
-    #             # Extract the region of the image
-    #             region = img_gray[y:y+h, x:x+w]
-                
-    #             # Compute SSD for this region and the template
-    #             ssd = np.sum((region - template_gray) ** 2)
-
-    #             # Track minimum SSD and best matching location
-    #             if ssd < min_ssd:
-    #                 min_ssd = ssd
-    #                 best_loc = (x, y)
-
-    #     # Calculate similarity percentage from SSD
-    #     max_possible_ssd = (255**2) * (h * w)
-    #     similarity_percent = 100 * (1 - min_ssd / max_possible_ssd)
-
-    #     # Draw rectangle on a copy of the original image
-    #     top_left = best_loc
-    #     bottom_right = (top_left[0] + w, top_left[1] + h)
-    #     output_image = img.copy()
-    #     cv2.rectangle(output_image, top_left, bottom_right, (255, 0, 255), 2)
-
-    #     # Convert to QImage and display
-    #     height, width, channel = output_image.shape
-    #     bytes_per_line = 3 * width
-    #     q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-
-    #     pixmap = QPixmap.fromImage(q_img)
-    #     scaled_pixmap = pixmap.scaled(
-    #         self.output_image_label.width(),
-    #         self.output_image_label.height(),
-    #         Qt.KeepAspectRatio
-    #     )
-    #     self.output_image_label.setPixmap(scaled_pixmap)
-
-    #     # End the timer and calculate the elapsed time
-    #     end_time = time.time()
-    #     elapsed_time = end_time - start_time
-    #     print(f"SSD Similarity: {similarity_percent:.2f}%\n")
-    #     self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
-
-    def sum_of_squared_difference(self, image, descriptors1, keypoints2, describtors2, numfeatures):
+       
+        # print(des2)
+        des1 = np.array(des1).astype(np.float32)
+        des2 = np.array(des2).astype(np.float32)
+        self.elapsed_time_cal_sift = time.time() - self.start_time_cal_sift
+        return img, kp1,des1,template, kp2, des2
+   
+   
+   
+    def sift_matching_drawing(self, img, kp1, desc1, template, kp2, desc2, ratio_thresh=0.75):
+        # Start the timer
         start_time = time.time()
+        
+        # Initialize matches list
         matches = []
-        min_ssd = float('inf')  # Initialize to infinity
-        for i, d1 in enumerate(descriptors1):
-            ssd_scores = np.sum((describtors2 - d1) ** 2, axis=1)
-            best_match_idx = np.argmin(ssd_scores)
-            matches.append((i, best_match_idx, ssd_scores[best_match_idx]))
+        
+        # Pre-compute squared norms
+        desc1_sq = np.sum(desc1 ** 2, axis=1)
+        desc2_sq = np.sum(desc2 ** 2, axis=1)
+        
+        # Compute all pairwise distances using matrix operations
+        dot_product = np.dot(desc1, desc2.T)
+        ssd_matrix = desc1_sq[:, np.newaxis] + desc2_sq - 2 * dot_product
+        
+        # Find matches using ratio test
+        for i in range(desc1.shape[0]):
+            distances = ssd_matrix[i]
+            smallest_indices = np.argpartition(distances, 1)[:2]
+            dist1, dist2 = distances[smallest_indices[0]], distances[smallest_indices[1]]
             
-            # Track minimum SSD score
-            min_ssd = min(min_ssd, ssd_scores[best_match_idx])
+            if dist1 > dist2:
+                dist1, dist2 = dist2, dist1
+                smallest_indices = smallest_indices[::-1]
+            
+            if dist1 < ratio_thresh * dist2:
+                matches.append((i, smallest_indices[0], dist1))
         
-        matches_ncc = sorted(matches, key=lambda x: x[2])
-        good_matches_ncc = matches_ncc[:numfeatures]
-        dst_pts_ncc = np.float32([keypoints2[m[1]].pt for m in good_matches_ncc]).reshape(-1, 1, 2)
-        x, y, w, h = cv2.boundingRect(dst_pts_ncc)
+        # Prepare images for visualization
+        img1_color = cv2.cvtColor(template, cv2.COLOR_GRAY2BGR) if len(template.shape) == 2 else template.copy()
+        img2_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) if len(img.shape) == 2 else img.copy()
+        
+        # Create output image (side by side)
+        h1, w1 = img1_color.shape[:2]
+        h2, w2 = img2_color.shape[:2]
+        output_img = np.ones((max(h1, h2), w1 + w2, 3), dtype=np.uint8) * 255  # White background
+        output_img[:h1, :w1] = img1_color
+        output_img[:h2, w1:w1+w2] = img2_color
+        
 
-        # Calculate SSD similarity percentage
-        max_ssd = np.max([match[2] for match in matches])  # Find maximum SSD score
-        similarity_percentage_ssd = (1 - min_ssd / max_ssd) * 100  # Higher value indicates better match
-
-        # Print the similarity percentage
-        print(f"SSD Similarity: {similarity_percentage_ssd:.2f}%")
-
-        output_image = image.copy()
-        cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
+        
+        # Draw all matches at once (more efficient than drawing in the loop)
+        for idx1, idx2, _ in matches:
+            x1, y1 = int(kp1[idx1].pt[0]), int(kp1[idx1].pt[1])
+            x2, y2 = int(kp2[idx2].pt[0] + w1), int(kp2[idx2].pt[1])
+            
+            # Generate consistent color for this match
+            color = (255, 0,255)
+            
+            # Draw line and circles
+            cv2.line(output_img, (x1, y1), (x2, y2), color, 1, lineType=cv2.LINE_AA)
+            cv2.circle(output_img, (x1, y1), 1, color, -1, lineType=cv2.LINE_AA)
+            cv2.circle(output_img, (x2, y2), 1, color, -1, lineType=cv2.LINE_AA)
+        
         # Convert to QImage and display
-        height, width, channel = output_image.shape
-        
-        
-        bytes_per_line = 3* width
-        q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        height, width, channel = output_img.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(output_img.data, width, height, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(
             472,
             self.output_image_label.height(),
-          
+            Qt.KeepAspectRatio
         )
-        # print(f"Width: {self.output_image_label.width()}")
-        # print(f"Height: {self.output_image_label.height()}")
         self.output_image_label.setPixmap(scaled_pixmap)
+        
+        # Calculate and display elapsed time
+        if self.upload_first :
+             self.upload_first=False
+             print("////////////////////////////////////////")
+             print(f"time sift :{self.elapsed_time_cal_sift}")
+             print(f"time match  :{time.time() - start_time }")
+            
+             elapsed_time = time.time() - start_time + self.elapsed_time_cal_sift
+        else:
+                elapsed_time = time.time() - start_time
+        self.label_param_20.setText(f"        Computation time : {elapsed_time:.4f} seconds")
 
-        # End the timer and calculate the elapsed time
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
 
 
-    def normalized_cross_correlation(self, image, descriptors1, keypoints2, describtors2, numfeatures):
+
+
+
+
+
+
+
+    def sum_of_squared_difference(self, img, template):
+        if img is None or template is None:
+            print("One or both images failed to load.")
+            return
+
+        # Start the timer
         start_time = time.time()
 
-        des1_norm = descriptors1 / np.linalg.norm(descriptors1, axis=1, keepdims=True)
-        des2_norm = describtors2 / np.linalg.norm(describtors2, axis=1, keepdims=True)
-        matches = []
-        max_ncc = -float('inf')  # Initialize to negative infinity
-        for i, d1 in enumerate(des1_norm):
-            ncc_scores = np.dot(des2_norm, d1.T)
-            best_match_idx = np.argmax(ncc_scores)
-            matches.append((i, best_match_idx, 1 - ncc_scores[best_match_idx]))
+        # Convert to grayscale
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 
-            # Track maximum NCC score
-            max_ncc = max(max_ncc, 1 - ncc_scores[best_match_idx])
+        # Get template dimensions
+        temp_h, temp_w = template_gray.shape
+        img_h, img_w = img_gray.shape
 
-        matches_ncc = sorted(matches, key=lambda x: x[2])
-        good_matches_ncc = matches_ncc[:numfeatures]
-        dst_pts_ncc = np.float32([keypoints2[m[1]].pt for m in good_matches_ncc]).reshape(-1, 1, 2)
-        x, y, w, h = cv2.boundingRect(dst_pts_ncc)
+        min_ssd = float('inf')
+        best_loc = (0, 0)
 
-        # Calculate NCC similarity percentage
-        similarity_percentage_ncc = max_ncc * 100  # Higher value indicates better match
+        vaild_h= img_h - temp_h + 1
+        vaild_w= img_w - temp_w + 1
 
-        # Print the similarity percentage
-        print(f"NCC Similarity: {similarity_percentage_ncc:.2f}%")
+        # Manually compute SSD over all possible locations in the image
+        for y in range(vaild_h):
+            for x in range(vaild_w):
+                # Extract the region of the image
+                region = img_gray[y:y+temp_h, x:x+temp_w]
+                
+                # Compute SSD for this region and the template
+                ssd = np.sum((region - template_gray) ** 2)
 
-        output_image = image.copy()
-        cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # Track minimum SSD and best matching location
+                if ssd < min_ssd:
+                    min_ssd = ssd
+                    best_loc = (x, y)
+
+        # Calculate similarity percentage from SSD
+        max_possible_ssd = (255**2) * (temp_h * temp_w)
+        similarity_percent = 100 * (1 - min_ssd / max_possible_ssd)
+
+        # Draw rectangle on a copy of the original image
+        output_image = img.copy()
+        cv2.rectangle(output_image, best_loc, (best_loc[0] + temp_w, best_loc[1] + temp_h), (255, 0, 255), 1)
 
         # Convert to QImage and display
         height, width, channel = output_image.shape
         bytes_per_line = 3 * width
         q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(
-           472,
+              472,
             self.output_image_label.height(),
-          
+            Qt.KeepAspectRatio
         )
         self.output_image_label.setPixmap(scaled_pixmap)
 
         # End the timer and calculate the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
-        self.Label_Comp_Match.setText(f"{elapsed_time:.4f} seconds")
+        print(f"SSD Similarity: {similarity_percent:.2f}%\n")
+        self.Label_Comp_Match.setText(f"{elapsed_time:.3f} seconds")
+
+
+    def normalized_cross_correlation(self, img, template):
+        if img is None or template is None:
+            print("One or both images failed to load.")
+            return
+
+        # Start the timer
+        start_time = time.time()
+
+        # Convert to grayscale
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+        # Get template dimensions
+        temp_h, temp_w = template_gray.shape
+        img_h, img_w = img_gray.shape
+
+        max_ncc = -1.0
+        best_loc = (0, 0)
+        vaild_h= img_h - temp_h + 1
+        vaild_w= img_w - temp_w + 1
+        # Manually compute NCC over all possible locations in the image
+        for y in range(vaild_h):
+            for x in range(vaild_w):
+                # Extract the region of the image
+                region = img_gray[y:y+temp_h, x:x+temp_w]
+
+                # Calculate the mean of the region and the template
+                mean_img = np.mean(region)
+                mean_template = np.mean(template_gray)
+
+                # Compute the numerator and denominator of the NCC formula
+                numerator = np.sum((region - mean_img) * (template_gray - mean_template))
+                denominator = np.sqrt(np.sum((region - mean_img) ** 2) * np.sum((template_gray - mean_template) ** 2))
+
+                # Compute NCC for this region
+                ncc = numerator / denominator if denominator != 0 else 0
+
+                # Track maximum NCC and best matching location
+                if ncc > max_ncc:
+                    max_ncc = ncc
+                    best_loc = (x, y)
+
+        # Calculate similarity percentage from NCC
+        similarity_percent = 100 * max_ncc
+
+        # Draw rectangle on a copy of the original image
+        # Draw rectangle on a copy of the original image
+        output_image = img.copy()
+        cv2.rectangle(output_image, best_loc, (best_loc[0] + temp_w, best_loc[1] + temp_h), (0, 255, 255), 1)
+
+        # Convert to QImage and display
+        height, width, channel = output_image.shape
+        bytes_per_line = 3 * width
+        q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+
+        pixmap = QPixmap.fromImage(q_img)
+        scaled_pixmap = pixmap.scaled(
+             472,
+            self.output_image_label.height(),
+            Qt.KeepAspectRatio
+        )
+        self.output_image_label.setPixmap(scaled_pixmap)
+
+        # End the timer and calculate the elapsed time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"NCC Similarity: {similarity_percent:.2f}%\n")
+        self.Label_Comp_Match.setText(f"{elapsed_time:.3f} seconds")
+
+
 
 
     def on_radio_selected(self):
         if  self.RadioButton_Harris_2.isChecked():
             pass
         elif  self.RadioButton_SIFT_2.isChecked():
-            pass
+                
+                slider_val=self.Slide_SIFT_Ratio.value()
+                self.label_param_19.setText(f"         SIFT_RATIO  : {slider_val/100:.2f}    ")
+                if self.image is not  None:
+                    self.sift_matching_drawing(self.image, self.kp1,self.des1,self.template, self.kp2, self.des2,ratio_thresh=slider_val/100 )
+        
         elif self.RadioButton_Match_3.isChecked():
             if self.RadioButton_SSD_2.isChecked():
-                numfeatures=self.Slider_Num_Features.value()
-                self.label_param_19.setText(f" Num_Features   :{numfeatures}")
-                self.top_image, descriptors1, keypoints2, describtors2 = self.get_keypoints_and_descriptors(self.top_image, self.bottom_image)
-                self.sum_of_squared_difference(self.top_image, descriptors1, keypoints2, describtors2,numfeatures)
-                
+                self.sum_of_squared_difference(self.top_image, self.bottom_image)
             elif self.RadioButton_NND_2.isChecked():
-                numfeatures=self.Slider_Num_Features.value()
-                self.label_param_19.setText(f" Num_Features   :{numfeatures}")
-                self.top_image, descriptors1, keypoints2, describtors2 = self.get_keypoints_and_descriptors(self.top_image, self.bottom_image)
-                self.normalized_cross_correlation(self.top_image, descriptors1, keypoints2, describtors2,numfeatures)
-               
+                self.normalized_cross_correlation(self.top_image, self.bottom_image)
+            
 
 
 
