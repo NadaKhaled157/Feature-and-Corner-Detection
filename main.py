@@ -439,32 +439,48 @@ class MainWindow(QMainWindow):
         # Set the pixmap to the label
         self.original_image_label.setPixmap(scaled_pixmap)
 
-
     def extract_keypoints_octaves(self):
-
         height, width = self.grayscale_org_image.shape
-        num_octaves = int(np.lg(2)(min(width, height))) - 3
+        num_octaves = int(np.log2(min(width, height))) - 3  # Corrected np.lg(2) to np.log2
         k = math.sqrt(2)
         blurred_images = {}
-        DOG_images ={}
-        grey_image=self.grayscale_org_image
-        for i in range(1,num_octaves+1):
-            if i>1 :
-                grey_image = cv2.resize(grey_image, (grey_image.shape[1] // 2, grey_image.shape[0] // 2), interpolation=cv2.INTER_NEAREST)
+        DOG_images = {}
+        grey_image = self.grayscale_org_image
+        keypoints = []  # We'll store the keypoints here
+
+        for octave in range(1, num_octaves + 1):
+            if octave > 1:
+                grey_image = cv2.resize(grey_image, (grey_image.shape[1] // 2, grey_image.shape[0] // 2),
+                                        interpolation=cv2.INTER_NEAREST)
+
+            # Reset k for each octave
+            k_base = math.sqrt(2)
+
+            # Create Gaussian pyramid
             for i in range(1, 6):
-                k=pow(k,i-1)
-                sigma = 1
-                blurred_images[f"blurred_image{i}"] = cv2.GaussianBlur(grey_image, (5, 5), sigma*k)
-            for i in range (1,5) :
-                DOG_images[f"DOG_image{i}"] = blurred_images[f"blurred_image{i+1}"]-blurred_images[f"blurred_image{i}"]
+                sigma = 1.0
+                k_scale = pow(k_base, i - 1)
+                blurred_images[f"blurred_image{i}"] = cv2.GaussianBlur(grey_image, (5, 5), sigma * k_scale)
 
+            # Create DoG pyramid
+            for i in range(1, 5):
+                DOG_images[f"DOG_image{i}"] = blurred_images[f"blurred_image{i + 1}"] - blurred_images[
+                    f"blurred_image{i}"]
 
-            for i in range(2,4):
-                for y in range(1,height):
-                    for x in range(1,width):
-                        center = DOG_images["DOG_image2"][y, x]
+            # Detect keypoints
+            for i in range(2, 4):
+                # Adjust height and width for current octave's image
+                curr_height, curr_width = DOG_images[f"DOG_image{i}"].shape
 
-                        # 8 neighbors in the same layer (DOG_image2)
+                for y in range(1, curr_height - 1):
+                    for x in range(1, curr_width - 1):
+                        center = DOG_images[f"DOG_image{i}"][y, x]
+
+                        # Skip low contrast points
+                        if abs(center) < 0.03:
+                            continue
+
+                        # 8 neighbors in the same layer
                         same_layer_neighbors = [
                             DOG_images[f"DOG_image{i}"][y - 1, x - 1],
                             DOG_images[f"DOG_image{i}"][y - 1, x],
@@ -476,50 +492,68 @@ class MainWindow(QMainWindow):
                             DOG_images[f"DOG_image{i}"][y + 1, x + 1]
                         ]
 
-                        # 9 neighbors in the upper layer (DOG_image1)
+                        # 9 neighbors in the upper layer
                         upper_layer_neighbors = [
-                            DOG_images[f"DOG_image{i+1}"][y - 1, x - 1],
-                            DOG_images[f"DOG_image{i+1}"][y - 1, x],
-                            DOG_images[f"DOG_image{i+1}"][y - 1, x + 1],
-                            DOG_images[f"DOG_image{i+1}"][y, x - 1],
-                            DOG_images[f"DOG_image{i+1}"][y, x],
-                            DOG_images[f"DOG_image{i+1}"][y, x + 1],
-                            DOG_images[f"DOG_image{i+1}"][y + 1, x - 1],
-                            DOG_images[f"DOG_image{i+1}"][y + 1, x],
-                            DOG_images[f"DOG_image{i+1}"][y + 1, x + 1]
+                            DOG_images[f"DOG_image{i + 1}"][y - 1, x - 1],
+                            DOG_images[f"DOG_image{i + 1}"][y - 1, x],
+                            DOG_images[f"DOG_image{i + 1}"][y - 1, x + 1],
+                            DOG_images[f"DOG_image{i + 1}"][y, x - 1],
+                            DOG_images[f"DOG_image{i + 1}"][y, x],
+                            DOG_images[f"DOG_image{i + 1}"][y, x + 1],
+                            DOG_images[f"DOG_image{i + 1}"][y + 1, x - 1],
+                            DOG_images[f"DOG_image{i + 1}"][y + 1, x],
+                            DOG_images[f"DOG_image{i + 1}"][y + 1, x + 1]
                         ]
 
-                        # 9 neighbors in the lower layer (DOG_image3)
+                        # 9 neighbors in the lower layer
                         lower_layer_neighbors = [
-                            DOG_images[f"DOG_image{i-1}"][y - 1, x - 1],
-                            DOG_images[f"DOG_image{i-1}"][y - 1, x],
-                            DOG_images[f"DOG_image{i-1}"][y - 1, x + 1],
-                            DOG_images[f"DOG_image{i-1}"][y, x - 1],
-                            DOG_images[f"DOG_image{i-1}"][y, x],
-                            DOG_images[f"DOG_image{i-1}"][y, x + 1],
-                            DOG_images[f"DOG_image{i-1}"][y + 1, x - 1],
-                            DOG_images[f"DOG_image{i-1}"][y + 1, x],
-                            DOG_images[f"DOG_image{i-1}"][y + 1, x + 1]
+                            DOG_images[f"DOG_image{i - 1}"][y - 1, x - 1],
+                            DOG_images[f"DOG_image{i - 1}"][y - 1, x],
+                            DOG_images[f"DOG_image{i - 1}"][y - 1, x + 1],
+                            DOG_images[f"DOG_image{i - 1}"][y, x - 1],
+                            DOG_images[f"DOG_image{i - 1}"][y, x],
+                            DOG_images[f"DOG_image{i - 1}"][y, x + 1],
+                            DOG_images[f"DOG_image{i - 1}"][y + 1, x - 1],
+                            DOG_images[f"DOG_image{i - 1}"][y + 1, x],
+                            DOG_images[f"DOG_image{i - 1}"][y + 1, x + 1]
                         ]
 
                         all_neighbors = same_layer_neighbors + upper_layer_neighbors + lower_layer_neighbors
 
-                        # Local maximum
-                        if all(center > neighbor for neighbor in all_neighbors and center>0.03): # with contrast checking
-                           if (self.check_cornerness(DOG_images[f"DOG_image{i}"],y,x)) :
-                               pass
+                        # Check if it's a local extremum (maximum or minimum)
+                        is_max = all(center > neighbor for neighbor in all_neighbors)
+                        is_min = all(center < neighbor for neighbor in all_neighbors)
 
-                        # Local minimum
-                        if all(center < neighbor for neighbor in all_neighbors and center>0.03): # with contrast checking
-                            if (self.check_cornerness(DOG_images[f"DOG_image{i}"], y, x)) :
-                                pass
+                        if (is_max or is_min) and abs(center) > 0.03:  # Contrast threshold
+                            # Check edge response
+                            if self.check_cornerness(DOG_images[f"DOG_image{i}"], y, x):
+                                # Store keypoint with its scale and octave info
+                                # Calculate actual coordinates in the original image
+                                original_x = x * (2 ** (octave - 1))
+                                original_y = y * (2 ** (octave - 1))
+                                keypoint = {
+                                    'x': original_x,
+                                    'y': original_y,
+                                    'octave': octave,
+                                    'scale': i,
+                                    'response': abs(center),
+                                    'layer_image': DOG_images[f"DOG_image{i}"],
+                                    'source_image': blurred_images[f"blurred_image{i}"]  # For orientation calculation
+                                }
+                                keypoints.append(keypoint)
 
+        # Process keypoints - assign orientation and compute descriptors
+        self.keypoints = keypoints
+        self.keypoints_with_orientation = self.assign_orientation(keypoints)
+        self.descriptors = self.compute_descriptors(self.keypoints_with_orientation)
 
-    def check_cornerness(self,image,y_coo,x_coo):
+        return self.keypoints_with_orientation, self.descriptors
+
+    def check_cornerness(self, image, y_coo, x_coo):
         edge_thresh = 10
-        y=y_coo
-        x=x_coo
-        DOG_image=image
+        y = y_coo
+        x = x_coo
+        DOG_image = image
         # Use second-order central differences
         Dxx = DOG_image[y, x + 1] + DOG_image[y, x - 1] - 2 * DOG_image[y, x]
         Dyy = DOG_image[y + 1, x] + DOG_image[y - 1, x] - 2 * DOG_image[y, x]
@@ -530,12 +564,356 @@ class MainWindow(QMainWindow):
         TrH = Dxx + Dyy  # Trace
         DetH = Dxx * Dyy - Dxy ** 2  # Determinant
 
-        # Step 3: Compute curvature ratio (avoid division by zero)
+        # Compute curvature ratio (avoid division by zero)
+        if DetH <= 0:
+            return False
+
         r = edge_thresh
-        edge_pass = (DetH > 0) and ((TrH ** 2) / DetH < ((r + 1) ** 2) / r)
+        edge_pass = ((TrH ** 2) / DetH < ((r + 1) ** 2) / r)
 
-        return  edge_pass
+        return edge_pass
 
+    def assign_orientation(self, keypoints):
+        """
+        Assign orientation to keypoints based on local image gradient directions.
+
+        Args:
+            keypoints: List of detected keypoints
+
+        Returns:
+            List of keypoints with orientation assigned (some keypoints may generate multiple orientations)
+        """
+        keypoints_with_orientation = []
+
+        for keypoint in keypoints:
+            x, y = int(keypoint['x']), int(keypoint['y'])
+            octave = keypoint['octave']
+            scale = keypoint['scale']
+            source_image = keypoint['source_image']
+
+            # Adjust for octave (scale back to current octave's image)
+            x_octave = x // (2 ** (octave - 1))
+            y_octave = y // (2 ** (octave - 1))
+
+            # Define window size (based on scale)
+            # For SIFT, typically window radius = 3 * 1.5 * scale
+            window_radius = int(3 * 1.5 * scale)
+
+            # Ensure window fits within image bounds
+            height, width = source_image.shape
+
+            # Create orientation histogram (36 bins covering 360 degrees)
+            orientation_histogram = np.zeros(36)
+
+            # Process pixels in window
+            for i in range(max(0, y_octave - window_radius), min(height - 1, y_octave + window_radius + 1)):
+                for j in range(max(0, x_octave - window_radius), min(width - 1, x_octave + window_radius + 1)):
+                    # Calculate gradient
+                    dx = source_image[i, min(width - 1, j + 1)] - source_image[i, max(0, j - 1)]
+                    dy = source_image[min(height - 1, i + 1), j] - source_image[max(0, i - 1), j]
+
+                    gradient_magnitude = np.sqrt(dx * dx + dy * dy)
+                    gradient_orientation = (np.arctan2(dy, dx) + np.pi) * 180 / np.pi  # Convert to degrees (0-360)
+
+                    # Apply Gaussian weight
+                    weight = np.exp(-(((i - y_octave) ** 2 + (j - x_octave) ** 2) / (2 * (1.5 * scale) ** 2)))
+                    weighted_magnitude = weight * gradient_magnitude
+
+                    # Add to histogram
+                    bin_idx = int(gradient_orientation / 10) % 36  # 36 bins (each 10 degrees)
+                    orientation_histogram[bin_idx] += weighted_magnitude
+
+            # Smooth histogram
+            for _ in range(6):  # Smooth 6 times
+                smoothed_histogram = np.copy(orientation_histogram)
+                for bin_idx in range(36):
+                    prev_idx = (bin_idx - 1) % 36
+                    next_idx = (bin_idx + 1) % 36
+                    smoothed_histogram[bin_idx] = (orientation_histogram[prev_idx] +
+                                                   orientation_histogram[bin_idx] +
+                                                   orientation_histogram[next_idx]) / 3.0
+                orientation_histogram = smoothed_histogram
+
+            # Find peaks in histogram
+            max_peak = np.max(orientation_histogram)
+            peak_threshold = 0.8 * max_peak  # Consider peaks within 80% of max
+
+            # Create keypoint for each significant orientation peak
+            for bin_idx in range(36):
+                if orientation_histogram[bin_idx] >= peak_threshold:
+                    # Check if it's a local peak
+                    prev_idx = (bin_idx - 1) % 36
+                    next_idx = (bin_idx + 1) % 36
+                    if (orientation_histogram[bin_idx] > orientation_histogram[prev_idx] and
+                            orientation_histogram[bin_idx] > orientation_histogram[next_idx]):
+                        # Refine peak by interpolation
+                        bin_center = bin_idx * 10 + 5  # Center of the bin in degrees
+
+                        # Create new keypoint with this orientation
+                        new_keypoint = keypoint.copy()
+                        new_keypoint['orientation'] = bin_center  # Degrees
+                        keypoints_with_orientation.append(new_keypoint)
+
+            # If no peaks found, use the max bin
+            if not any(kp.get('x') == x and kp.get('y') == y for kp in keypoints_with_orientation):
+                max_bin = np.argmax(orientation_histogram)
+                bin_center = max_bin * 10 + 5
+                new_keypoint = keypoint.copy()
+                new_keypoint['orientation'] = bin_center
+                keypoints_with_orientation.append(new_keypoint)
+
+        return keypoints_with_orientation
+
+    def compute_descriptors(self, keypoints_with_orientation):
+        """
+        Compute descriptor for each keypoint.
+
+        Args:
+            keypoints_with_orientation: List of keypoints with orientation assigned
+
+        Returns:
+            List of (keypoint, descriptor) pairs
+        """
+        descriptors = []
+
+        for keypoint in keypoints_with_orientation:
+            x, y = int(keypoint['x']), int(keypoint['y'])
+            octave = keypoint['octave']
+            scale = keypoint['scale']
+            orientation = keypoint['orientation']  # in degrees
+            source_image = keypoint['source_image']
+
+            # Convert orientation to radians
+            orientation_rad = orientation * np.pi / 180.0
+
+            # Adjust for octave (scale back to current octave's image)
+            x_octave = x // (2 ** (octave - 1))
+            y_octave = y // (2 ** (octave - 1))
+
+            # Define descriptor parameters
+            num_bins = 8  # Number of bins per histogram
+            num_histograms = 4  # 4x4 grid of histograms
+            descriptor_size = num_bins * num_histograms * num_histograms  # 128 dimensions
+
+            # Window size is determined by scale
+            window_size = 3 * scale  # This determines the size of region
+
+            # Create descriptor
+            descriptor = np.zeros(descriptor_size)
+
+            # Calculate cos and sin of orientation for rotation invariance
+            cos_angle = np.cos(orientation_rad)
+            sin_angle = np.sin(orientation_rad)
+
+            # Calculate descriptor values
+            height, width = source_image.shape
+            hist_width = 4 * window_size
+            half_width = hist_width / 2
+
+            # For each of the 16 subregions
+            hist_index = 0
+            for i in range(-2, 2):
+                for j in range(-2, 2):
+                    # Histogram for this subregion
+                    histogram = np.zeros(num_bins)
+
+                    # Center of subregion relative to keypoint
+                    center_x = (j + 0.5) * window_size
+                    center_y = (i + 0.5) * window_size
+
+                    # For each pixel in subregion
+                    for y_offset in range(-int(window_size / 2), int(window_size / 2) + 1):
+                        for x_offset in range(-int(window_size / 2), int(window_size / 2) + 1):
+                            # Rotate coordinates
+                            rot_y = (y_offset * cos_angle - x_offset * sin_angle)
+                            rot_x = (y_offset * sin_angle + x_offset * cos_angle)
+
+                            # Position relative to subregion center
+                            y_pos = rot_y + center_y
+                            x_pos = rot_x + center_x
+
+                            # Calculate sample's histogram contribution
+                            y_bin = y_pos / half_width + 2
+                            x_bin = x_pos / half_width + 2
+
+                            # If sample is within descriptor bounds
+                            if 0 <= y_bin < 4 and 0 <= x_bin < 4:
+                                # Actual pixel coordinates (rotated around keypoint)
+                                pixel_x = int(x_octave + (x_offset * cos_angle + y_offset * sin_angle))
+                                pixel_y = int(y_octave + (-x_offset * sin_angle + y_offset * cos_angle))
+
+                                # Check if we're within image bounds
+                                if 0 <= pixel_y < height - 1 and 0 <= pixel_x < width - 1:
+                                    # Calculate gradient
+                                    dx = source_image[pixel_y, min(width - 1, pixel_x + 1)] - source_image[
+                                        pixel_y, max(0, pixel_x - 1)]
+                                    dy = source_image[min(height - 1, pixel_y + 1), pixel_x] - source_image[
+                                        max(0, pixel_y - 1), pixel_x]
+
+                                    # Gradient magnitude and orientation
+                                    magnitude = np.sqrt(dx * dx + dy * dy)
+                                    theta = (np.arctan2(dy, dx) + np.pi) * 180 / np.pi  # 0-360 degrees
+
+                                    # Subtract keypoint orientation for rotation invariance
+                                    theta = (theta - orientation) % 360
+
+                                    # Weight by Gaussian
+                                    weight = np.exp(-((rot_x * rot_x + rot_y * rot_y) / (2 * (0.5 * window_size) ** 2)))
+
+                                    # Trilinear interpolation for histogram bin
+                                    ori_bin = theta * num_bins / 360  # Convert to 0-8
+                                    ori_bin_floor = int(np.floor(ori_bin))
+                                    ori_bin_weight = ori_bin - ori_bin_floor
+
+                                    # Add weighted contribution to appropriate bins
+                                    if ori_bin_floor < 0:
+                                        ori_bin_floor += num_bins
+
+                                    # Main bin contribution
+                                    bin_idx = ori_bin_floor % num_bins
+                                    histogram[bin_idx] += weight * magnitude * (1 - ori_bin_weight)
+
+                                    # Adjacent bin contribution
+                                    bin_idx = (ori_bin_floor + 1) % num_bins
+                                    histogram[bin_idx] += weight * magnitude * ori_bin_weight
+
+                    # Add this histogram to the descriptor
+                    descriptor[hist_index:hist_index + num_bins] = histogram
+                    hist_index += num_bins
+
+            # Normalize descriptor to unit length (illumination invariance)
+            norm = np.linalg.norm(descriptor)
+            if norm > 0:
+                descriptor /= norm
+
+            # Clip values to 0.2 (as per SIFT paper)
+            descriptor = np.minimum(descriptor, 0.2)
+
+            # Normalize again
+            norm = np.linalg.norm(descriptor)
+            if norm > 0:
+                descriptor /= norm
+
+            # Store descriptor with keypoint
+            descriptors.append((keypoint, descriptor))
+
+        return descriptors
+
+    def match_descriptors(self, descriptors1, descriptors2, threshold=0.75):
+        """
+        Match descriptors between two images using ratio test.
+
+        Args:
+            descriptors1: List of (keypoint, descriptor) pairs from first image
+            descriptors2: List of (keypoint, descriptor) pairs from second image
+            threshold: Ratio threshold for Lowe's ratio test
+
+        Returns:
+            List of (keypoint1, keypoint2) matches
+        """
+        matches = []
+
+        # For each descriptor in the first image
+        for i, (kp1, desc1) in enumerate(descriptors1):
+            # Find distances to all descriptors in the second image
+            distances = []
+            for j, (kp2, desc2) in enumerate(descriptors2):
+                # Euclidean distance
+                dist = np.linalg.norm(desc1 - desc2)
+                distances.append((dist, j))
+
+            # Sort by distance
+            distances.sort()
+
+            # If we have at least 2 matches
+            if len(distances) >= 2:
+                # Apply Lowe's ratio test
+                if distances[0][0] < threshold * distances[1][0]:
+                    best_match_idx = distances[0][1]
+                    matches.append((kp1, descriptors2[best_match_idx][0]))
+
+        return matches
+
+    def visualize_keypoints(self, image, keypoints, color=(0, 255, 0)):
+        """
+        Visualize keypoints on the image.
+
+        Args:
+            image: Original image
+            keypoints: List of keypoints
+            color: Color for keypoint visualization
+
+        Returns:
+            Image with keypoints drawn
+        """
+        vis_image = image.copy()
+
+        # Convert to color if grayscale
+        if len(vis_image.shape) == 2:
+            vis_image = cv2.cvtColor(vis_image, cv2.COLOR_GRAY2BGR)
+
+        # Draw keypoints
+        for keypoint in keypoints:
+            x, y = int(keypoint['x']), int(keypoint['y'])
+
+            # Draw circle at keypoint position
+            cv2.circle(vis_image, (x, y), 3, color, -1)
+
+            # Draw orientation line
+            if 'orientation' in keypoint:
+                orientation_rad = keypoint['orientation'] * np.pi / 180.0
+                scale = 10  # Line length
+                dx = int(scale * np.cos(orientation_rad))
+                dy = int(scale * np.sin(orientation_rad))
+                cv2.line(vis_image, (x, y), (x + dx, y + dy), color, 1)
+
+        return vis_image
+
+    def visualize_matches(self, image1, keypoints1, image2, keypoints2, matches):
+        """
+        Visualize matches between two images.
+
+        Args:
+            image1, image2: Original images
+            keypoints1, keypoints2: List of keypoints from each image
+            matches: List of (keypoint1, keypoint2) matches
+
+        Returns:
+            Combined image with match lines drawn
+        """
+        # Convert to color if grayscale
+        if len(image1.shape) == 2:
+            image1 = cv2.cvtColor(image1, cv2.COLOR_GRAY2BGR)
+        if len(image2.shape) == 2:
+            image2 = cv2.cvtColor(image2, cv2.COLOR_GRAY2BGR)
+
+        # Create combined image
+        h1, w1 = image1.shape[:2]
+        h2, w2 = image2.shape[:2]
+
+        height = max(h1, h2)
+        width = w1 + w2
+
+        combined_image = np.zeros((height, width, 3), dtype=np.uint8)
+        combined_image[:h1, :w1] = image1
+        combined_image[:h2, w1:w1 + w2] = image2
+
+        # Draw match lines
+        for kp1, kp2 in matches:
+            x1, y1 = int(kp1['x']), int(kp1['y'])
+            x2, y2 = int(kp2['x']) + w1, int(kp2['y'])  # Adjust x2 for second image
+
+            # Random color for each match
+            color = tuple(np.random.randint(0, 255, 3).tolist())
+
+            # Draw line
+            cv2.line(combined_image, (x1, y1), (x2, y2), color, 1)
+
+            # Draw points
+            cv2.circle(combined_image, (x1, y1), 3, color, -1)
+            cv2.circle(combined_image, (x2, y2), 3, color, -1)
+
+        return combined_image
 
 
 
