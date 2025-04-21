@@ -1,3 +1,5 @@
+import math
+
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -436,6 +438,107 @@ class MainWindow(QMainWindow):
 
         # Set the pixmap to the label
         self.original_image_label.setPixmap(scaled_pixmap)
+
+
+    def extract_keypoints_octaves(self):
+
+        height, width = self.grayscale_org_image.shape
+        num_octaves = int(np.lg(2)(min(width, height))) - 3
+        k = math.sqrt(2)
+        blurred_images = {}
+        DOG_images ={}
+        grey_image=self.grayscale_org_image
+        for i in range(1,num_octaves+1):
+            if i>1 :
+                grey_image = cv2.resize(grey_image, (grey_image.shape[1] // 2, grey_image.shape[0] // 2), interpolation=cv2.INTER_NEAREST)
+            for i in range(1, 6):
+                k=pow(k,i-1)
+                sigma = 1
+                blurred_images[f"blurred_image{i}"] = cv2.GaussianBlur(grey_image, (5, 5), sigma*k)
+            for i in range (1,5) :
+                DOG_images[f"DOG_image{i}"] = blurred_images[f"blurred_image{i+1}"]-blurred_images[f"blurred_image{i}"]
+
+
+            for i in range(2,4):
+                for y in range(1,height):
+                    for x in range(1,width):
+                        center = DOG_images["DOG_image2"][y, x]
+
+                        # 8 neighbors in the same layer (DOG_image2)
+                        same_layer_neighbors = [
+                            DOG_images[f"DOG_image{i}"][y - 1, x - 1],
+                            DOG_images[f"DOG_image{i}"][y - 1, x],
+                            DOG_images[f"DOG_image{i}"][y - 1, x + 1],
+                            DOG_images[f"DOG_image{i}"][y, x - 1],
+                            DOG_images[f"DOG_image{i}"][y, x + 1],
+                            DOG_images[f"DOG_image{i}"][y + 1, x - 1],
+                            DOG_images[f"DOG_image{i}"][y + 1, x],
+                            DOG_images[f"DOG_image{i}"][y + 1, x + 1]
+                        ]
+
+                        # 9 neighbors in the upper layer (DOG_image1)
+                        upper_layer_neighbors = [
+                            DOG_images[f"DOG_image{i+1}"][y - 1, x - 1],
+                            DOG_images[f"DOG_image{i+1}"][y - 1, x],
+                            DOG_images[f"DOG_image{i+1}"][y - 1, x + 1],
+                            DOG_images[f"DOG_image{i+1}"][y, x - 1],
+                            DOG_images[f"DOG_image{i+1}"][y, x],
+                            DOG_images[f"DOG_image{i+1}"][y, x + 1],
+                            DOG_images[f"DOG_image{i+1}"][y + 1, x - 1],
+                            DOG_images[f"DOG_image{i+1}"][y + 1, x],
+                            DOG_images[f"DOG_image{i+1}"][y + 1, x + 1]
+                        ]
+
+                        # 9 neighbors in the lower layer (DOG_image3)
+                        lower_layer_neighbors = [
+                            DOG_images[f"DOG_image{i-1}"][y - 1, x - 1],
+                            DOG_images[f"DOG_image{i-1}"][y - 1, x],
+                            DOG_images[f"DOG_image{i-1}"][y - 1, x + 1],
+                            DOG_images[f"DOG_image{i-1}"][y, x - 1],
+                            DOG_images[f"DOG_image{i-1}"][y, x],
+                            DOG_images[f"DOG_image{i-1}"][y, x + 1],
+                            DOG_images[f"DOG_image{i-1}"][y + 1, x - 1],
+                            DOG_images[f"DOG_image{i-1}"][y + 1, x],
+                            DOG_images[f"DOG_image{i-1}"][y + 1, x + 1]
+                        ]
+
+                        all_neighbors = same_layer_neighbors + upper_layer_neighbors + lower_layer_neighbors
+
+                        # Local maximum
+                        if all(center > neighbor for neighbor in all_neighbors and center>0.03): # with contrast checking
+                           if (self.check_cornerness(DOG_images[f"DOG_image{i}"],y,x)) :
+                               pass
+
+                        # Local minimum
+                        if all(center < neighbor for neighbor in all_neighbors and center>0.03): # with contrast checking
+                            if (self.check_cornerness(DOG_images[f"DOG_image{i}"], y, x)) :
+                                pass
+
+
+    def check_cornerness(self,image,y_coo,x_coo):
+        edge_thresh = 10
+        y=y_coo
+        x=x_coo
+        DOG_image=image
+        # Use second-order central differences
+        Dxx = DOG_image[y, x + 1] + DOG_image[y, x - 1] - 2 * DOG_image[y, x]
+        Dyy = DOG_image[y + 1, x] + DOG_image[y - 1, x] - 2 * DOG_image[y, x]
+        Dxy = (DOG_image[y + 1, x + 1] - DOG_image[y + 1, x - 1] -
+               DOG_image[y - 1, x + 1] + DOG_image[y - 1, x - 1]) / 4.0
+
+        # Construct Hessian
+        TrH = Dxx + Dyy  # Trace
+        DetH = Dxx * Dyy - Dxy ** 2  # Determinant
+
+        # Step 3: Compute curvature ratio (avoid division by zero)
+        r = edge_thresh
+        edge_pass = (DetH > 0) and ((TrH ** 2) / DetH < ((r + 1) ** 2) / r)
+
+        return  edge_pass
+
+
+
+
 
 
 
