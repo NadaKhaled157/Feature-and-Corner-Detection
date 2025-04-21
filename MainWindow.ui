@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1490</width>
+    <width>1471</width>
     <height>861</height>
    </rect>
   </property>
@@ -942,13 +942,13 @@ QSlider::add-page:horizontal {
 </string>
                 </property>
                 <property name="minimum">
-                 <number>10</number>
+                 <number>1</number>
                 </property>
                 <property name="maximum">
-                 <number>200</number>
+                 <number>30</number>
                 </property>
                 <property name="singleStep">
-                 <number>5</number>
+                 <number>1</number>
                 </property>
                 <property name="pageStep">
                  <number>10</number>
@@ -1463,7 +1463,7 @@ border:None;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1490</width>
+     <width>1471</width>
      <height>26</height>
     </rect>
    </property>

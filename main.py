@@ -545,14 +545,18 @@ class MainWindow(QMainWindow):
 
         # Convert to QImage and display
         height, width, channel = output_image.shape
-        bytes_per_line = 3 * width
+        
+        
+        bytes_per_line = 3* width
         q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(
-            self.output_image_label.width(),
+            472,
             self.output_image_label.height(),
-            Qt.KeepAspectRatio
+          
         )
+        # print(f"Width: {self.output_image_label.width()}")
+        # print(f"Height: {self.output_image_label.height()}")
         self.output_image_label.setPixmap(scaled_pixmap)
 
         # End the timer and calculate the elapsed time
@@ -596,9 +600,9 @@ class MainWindow(QMainWindow):
         q_img = QImage(output_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(
-            self.output_image_label.width(),
+           472,
             self.output_image_label.height(),
-            Qt.KeepAspectRatio
+          
         )
         self.output_image_label.setPixmap(scaled_pixmap)
 
