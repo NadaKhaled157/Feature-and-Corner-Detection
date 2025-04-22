@@ -463,6 +463,7 @@ class MainWindow(QMainWindow):
 
     def extract_keypoints_octaves(self , image):
         height, width = image.shape
+        image=image.astype(np.float32)
         num_octaves = int(np.log2(min(width, height))) - 3  # Corrected np.lg(2) to np.log2
         k = math.sqrt(2)
         blurred_images = {}
@@ -572,7 +573,7 @@ class MainWindow(QMainWindow):
         return  self.keypoints_with_orientation ,self.descriptors
 
     def check_cornerness(self, image, y_coo, x_coo):
-        edge_thresh = 10
+        edge_thresh = 10.0
         y = y_coo
         x = x_coo
         DOG_image = image
@@ -939,9 +940,37 @@ class MainWindow(QMainWindow):
 
         return combined_image
 
+    def get_sift_keypoints_and_descriptors(self,img):
+        """
+        Wrapper function to make output compatible with OpenCV's SIFT format
 
+        Returns:
+            keypoints: List of cv2.KeyPoint objects
+            descriptors: NumPy array of shape (N, 128) containing descriptors
+        """
+        # Call your existing function
+        keypoints_with_orientation, descriptors_pairs = self.extract_keypoints_octaves(img)
 
+        # Convert keypoints to cv2.KeyPoint objects
+        cv_keypoints = []
+        for kp in keypoints_with_orientation:
+            # Create a cv2.KeyPoint object
+            # Parameters: x, y, size, angle, response, octave, class_id
+            cv_kp = cv2.KeyPoint(
+                x=float(kp['x']),
+                y=float(kp['y']),
+                size=float(kp['scale'] * 3),  # Size based on scale
+                angle=float(kp['orientation']),  # Orientation in degrees
+                response=float(kp['response']),
+                octave=int(kp['octave']),
+                class_id=-1  # Default class_id
+            )
+            cv_keypoints.append(cv_kp)
 
+        # Convert descriptors to numpy array
+        cv_descriptors = np.array([desc for _, desc in descriptors_pairs])
+
+        return cv_keypoints, cv_descriptors
 
 
   #hereeeeeee   
@@ -953,14 +982,19 @@ class MainWindow(QMainWindow):
                 # Convert to grayscale
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
- 
-        #hereeeeeee 
-        sift = cv2.SIFT_create()
-        kp1, des1 = sift.detectAndCompute(template_gray, None)  
-        kp2, des2 = sift.detectAndCompute(img_gray, None)  
-        # Convert descriptors to float32
+        kp1,des1=self.get_sift_keypoints_and_descriptors(img_gray)
+        kp2, des2 = self.get_sift_keypoints_and_descriptors(template_gray)
 
-       
+
+
+
+        #hereeeeeee
+        # sift = cv2.SIFT_create()
+        # kp1_not, des1_not = sift.detectAndCompute(template_gray, None)
+        # kp2_not, des2_not = sift.detectAndCompute(img_gray, None)
+        # # Convert descriptors to float32
+
+
         # print(des2)
         des1 = np.array(des1).astype(np.float32)
         des2 = np.array(des2).astype(np.float32)
