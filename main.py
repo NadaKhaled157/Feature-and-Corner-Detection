@@ -1139,7 +1139,7 @@ class MainWindow(QMainWindow):
    
    
    
-    def sift_matching_drawing(self, img, kp1, desc1, template, kp2, desc2, ratio_thresh=0.75):
+    def sift_matching_drawing(self, template, kp1, desc1, img, kp2, desc2, ratio_thresh=0.75):
         # Start the timer
         start_time = time.time()
         
